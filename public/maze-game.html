@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maze Game</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+      }
+
+      .maze-game {
+        background-image: url("../asset/images/maze-5.jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+
+      .modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border: 1px solid #ccc;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        width: 300px;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        width: 80%;
+        max-width: 400px;
+      }
+
+      .modal-content h2 {
+        margin-top: 0;
+      }
+
+      #gameContainer {
+        display: flex;
+        flex-direction: row; /* Align maze and stats horizontally */
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+        height: 90vh; /* Full height of viewport */
+        background-image: url("../asset/images/maze-3.jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        padding: 20px; /* Add padding around the container */
+        gap: 20px; /* Add spacing between the maze and stats */
+      }
+
+      #mazeCanvas {
+        flex: 1;
+        max-width: 600px;
+        height: 600px;
+        border: 2px solid black;
+        margin: auto; /* Center the canvas inside its flex container */
+      }
+
+    #progressContainer {
+      flex: 1; /* Allow the progress to take equal space as the maze */
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start; /* Align content to the start */
+      justify-content: flex-start;
+      background: rgba(255, 255, 255, 0.8); /* Optional translucent background */
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    #stats {
+      margin-top: 50px;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+
+      #progressContainer table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #progressContainer th, #progressContainer td {
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    #progressContainer th {
+      background-color: #f4f4f4;
+    }
+
+
+      #avatarContainer {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      #avatarContainer img {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+
+      #avatarContainer img:hover {
+        transform: scale(1.1);
+      }
+
+      .player-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background: #fff;
+      }
+
+      #mazeCanvas {
+        border: 2px solid black;
+      }
+
+      #leaderboard {
+        margin-top: 20px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      #leaderboard th,
+      #leaderboard td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+
+      #leaderboard th {
+        text-align: left;
+        background-color: #f4f4f4;
+      }
+    </style>
+    <link rel="stylesheet" href="/asset/css/style.css" />
+  </head>
+  <body class="maze-game">
+    <!-- Name Input Modal -->
+    <div id="nameModal" class="modal">
+      <div class="modal-content">
+        <h2>Enter Your Name</h2>
+        <input type="text" id="playerNameInput" placeholder="Enter your name" />
+        <button onclick="proceedToAvatarSelection()">Next</button>
+      </div>
+    </div>
+
+    <!-- Avatar Selection Modal -->
+    <div id="avatarModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <h2>Select Your Avatar</h2>
+        <div id="avatarContainer"></div>
+      </div>
+    </div>
+
+    <!-- Waiting Room Modal -->
+    <div id="waitingRoomModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <h2>Waiting for Players</h2>
+        <p>Room ID: <span id="roomIdWaiting">12345</span></p> <!-- Display Room ID -->
+        <div id="playerListContainer" class="player-list">
+          <table id="playerList"></table>
+        </div>
+        
+        <p><span id="countdown"></p>
+      </div>
+    </div>
+    <!-- Game Stats and Maze Canvas -->
+    <div id="gameContainer" style="display: none">
+      <div id="stats">
+        <p>Room ID: <span id="roomIdMaze">12345</span></p> <!-- Display Room ID -->
+        <span id="timer">Time Left: 60s</span> |
+        <span id="score">Score: 0</span>
+      </div>
+      
+
+      <div style="display: flex">
+        <!-- Maze Canvas -->
+        <canvas id="mazeCanvas" width="600" height="600"></canvas>
+
+       <!-- Progress Container -->
+      <div id="progressContainer" style="margin-left: 20px; flex-grow: 1">
+        <h3>Player Progress</h3>
+        <!-- Progress table will be dynamically populated -->
+      </div>
+
+
+      </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <h2 id="leaderboardTitle">Leaderboard</h2>
+        <table id="leaderboard">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <button onclick="closeLeaderboard()">Close</button>
+      </div>
+    </div>
+
+    <script type="module" src="js/main-game.js"></script>
+    <script>
+      function closeLeaderboard() {
+          const leaderboardModal = document.getElementById("leaderboardModal");
+          leaderboardModal.style.display = "none";
+          window.location.href = "index.html"; // Redirect to the main page
+        }
+        window.closeLeaderboard = closeLeaderboard;
+
+    </script>
+  </body>
+</html>

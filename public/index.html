@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maze Game</title>
+    <link rel="stylesheet" href="/asset/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title">Maze Escape Game</h1>
+      <div class="menu">
+        <a href="create-room.html"
+          ><button class="menu-button">Create Room</button></a
+        >
+        <a href="join-room.html"
+          ><button class="menu-button">Join Room</button></a
+        >
+        <a href="settings.html"
+          ><button class="menu-button">Settings</button></a
+        >
+        <button class="menu-button" onclick="exitGame()">Exit</button>
+      </div>
+    </div>
+    <script>
+      function startGame() {
+        window.location.href = "maze-game.html";
+      }
+      function exitGame() {
+        window.close();
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,115 @@
+/* Reset and Base Styles */
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-image: url("../images/maze-1.jpg"); /* Use your background image */
+  background-size: cover;
+  background-position: center;
+  font-family: "Courier New", Courier, monospace;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Container Styling */
+.container {
+  text-align: center;
+  padding: 80px;
+  border-radius: 20px;
+  background-color: rgba(15, 60, 76, 0.9); /* Slightly transparent background */
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Title Styling */
+h1.title,
+h2.title {
+  font-size: 4rem;
+  color: #f4e04d;
+  margin-bottom: 40px;
+}
+
+/* Menu Styling */
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+#roomIdCreate,
+#roomIdWaiting,
+#roomIdMaze {
+  font-weight: bold;
+  color: #ff7b54;
+  font-size: 1.2rem;
+}
+
+/* Button Styling - Force all buttons to have the exact same width and height */
+.menu-button {
+  background-color: #ff7b54;
+  border: none;
+  border-radius: 10px;
+  padding: 15px;
+  color: white;
+  font-size: 1.7rem;
+  cursor: pointer;
+  width: 380px; /* Fixed width for all buttons */
+  height: 60px; /* Fixed height for uniformity */
+  box-sizing: border-box; /* Ensure padding doesn't affect button size */
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.menu-button:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Input Field Styling */
+.input-field {
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 280px;
+  font-size: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 40px;
+  }
+
+  .menu-button {
+    font-size: 1.6rem;
+    height: 50px; /* Adjust height for mobile */
+  }
+
+  #gameContainer {
+    flex-direction: column; /* Stack vertically */
+    gap: 10px;
+  }
+
+  #mazeCanvas,
+  #progressContainer {
+    width: 100%;
+  }
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Join Room</title>
+    <link rel="stylesheet" href="/asset/css/style.css" />
+    <style>
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        width: 80%;
+        max-width: 400px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .modal-content h2 {
+        margin-bottom: 15px;
+      }
+
+      .modal-content button {
+        padding: 10px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .modal-content button:hover {
+        background: #0056b3;
+      }
+    </style>
+    <script type="module" src="js/join-room.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Join a Room</h2>
+      <input type="text" id="roomIdInput" placeholder="Enter Room ID" />
+      <button id="join-room">Join Room</button>
+    </div>
+
+    <!-- Modal for No Room Found -->
+    <div id="noRoomModal" class="modal">
+      <div class="modal-content">
+        <h2>No Room Found</h2>
+        <p>The room ID you entered does not exist. Please try again.</p>
+        <button onclick="closeModal('noRoomModal')">Close</button>
+      </div>
+    </div>
+
+    <!-- Modal for Duplicate Name or Avatar -->
+    <div id="duplicateModal" class="modal">
+      <div class="modal-content">
+        <h2>Duplicate Name or Avatar</h2>
+        <p>
+          The name or avatar you selected is already taken. Please choose a
+          different one.
+        </p>
+        <button onclick="closeModal('duplicateModal')">Close</button>
+      </div>
+    </div>
+
+    <!-- Modal for No Input -->
+    <div id="noInputModal" class="modal">
+      <div class="modal-content">
+        <h2>Invalid Input</h2>
+        <p>Please input a valid room ID.</p>
+        <button onclick="closeModal('noInputModal')">Close</button>
+      </div>
+    </div>
+  </body>
+</html>
