@@ -1,30 +1,46 @@
 export function generateMaze(width, height, seed) {
   const maze = Array.from({ length: height }, () => Array(width).fill(1));
 
-  // Simple random generator using seed for consistent mazes
   const rng = seedRandom(seed);
 
-  // Generate maze paths
   const startX = Math.floor(rng() * width);
   const startY = Math.floor(rng() * height);
-  carvePath(maze, startX, startY, rng); // Ensure carvePath is defined
+  carvePath(maze, startX, startY, rng);
 
-  // Place an exit
+  // Place an exit logically
   let exitX, exitY;
-  do {
-    exitX = Math.floor(rng() * width);
-    exitY = Math.floor(rng() * height);
-  } while (maze[exitY][exitX] !== 0);
-  maze[exitY][exitX] = 0;
+  const possibleExits = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (
+        maze[y][x] === 0 &&
+        ((y > 0 && maze[y - 1][x] === 1) ||
+          (y < height - 1 && maze[y + 1][x] === 1) ||
+          (x > 0 && maze[y][x - 1] === 1) ||
+          (x < width - 1 && maze[y][x + 1] === 1))
+      ) {
+        possibleExits.push({ x, y });
+      }
+    }
+  }
 
-  // Generate coins
+  if (possibleExits.length > 0) {
+    const randomIndex = Math.floor(rng() * possibleExits.length);
+    exitX = possibleExits[randomIndex].x;
+    exitY = possibleExits[randomIndex].y;
+  } else {
+    do {
+      exitX = Math.floor(rng() * width);
+      exitY = Math.floor(rng() * height);
+    } while (maze[exitY][exitX] !== 0);
+  }
+
+  console.log(`Exit placed at (${exitX}, ${exitY})`);
+
+  maze[exitY][exitX] = 0;
   const coins = generateCoins(maze, width, height, rng);
 
-  return {
-    maze,
-    exit: { x: exitX, y: exitY },
-    coins,
-  };
+  return { maze, exit: { x: exitX, y: exitY }, coins };
 }
 
 // Carve paths in the maze

@@ -22,31 +22,76 @@
         background-repeat: no-repeat;
       }
 
+      /* General Modal Styles */
       .modal {
+        display: flex;
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        border: 1px solid #ccc;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
         z-index: 1000;
-        width: 300px;
-        padding: 20px;
-        text-align: center;
       }
 
       .modal-content {
         background: white;
-        padding: 20px;
-        border-radius: 8px;
+        padding: 30px;
+        border-radius: 12px;
         text-align: center;
-        width: 80%;
+        width: 90%;
         max-width: 400px;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.3s ease-in-out;
       }
 
       .modal-content h2 {
-        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        color: #333;
+      }
+
+      .modal-content input[type="text"] {
+        width: 90%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 2px solid #ff7b54;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+        box-sizing: border-box;
+      }
+
+      .modal-content input[type="text"]:focus {
+        border-color: #ebba34;
+        box-shadow: 0 0 5px rgba(235, 186, 52, 0.5);
+      }
+
+      .modal-content button {
+        background-color: #ff7b54;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .modal-content button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .player-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        background: #fff;
+        margin-top: 15px;
       }
 
       #gameContainer {
@@ -71,47 +116,51 @@
         margin: auto; /* Center the canvas inside its flex container */
       }
 
-    #progressContainer {
-      flex: 1; /* Allow the progress to take equal space as the maze */
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start; /* Align content to the start */
-      justify-content: flex-start;
-      background: rgba(255, 255, 255, 0.8); /* Optional translucent background */
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    }
+      #progressContainer {
+        flex: 1; /* Allow the progress to take equal space as the maze */
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* Align content to the start */
+        justify-content: flex-start;
+        background: rgba(
+          255,
+          255,
+          255,
+          0.8
+        ); /* Optional translucent background */
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      }
 
-    #stats {
-      margin-top: 50px;
-      margin-bottom: 20px;
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
-
+      #stats {
+        margin-top: 30px;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
 
       #progressContainer table {
-      width: 100%;
-      border-collapse: collapse;
-    }
+        width: 100%;
+        border-collapse: collapse;
+      }
 
-    #progressContainer th, #progressContainer td {
-      padding: 8px;
-      text-align: center;
-      border: 1px solid #ddd;
-    }
+      #progressContainer th,
+      #progressContainer td {
+        padding: 8px;
+        text-align: center;
+        border: 1px solid #ddd;
+      }
 
-    #progressContainer th {
-      background-color: #f4f4f4;
-    }
-
+      #progressContainer th {
+        background-color: #f4f4f4;
+      }
 
       #avatarContainer {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 10px;
+        gap: 15px;
       }
 
       #avatarContainer img {
@@ -124,14 +173,7 @@
 
       #avatarContainer img:hover {
         transform: scale(1.1);
-      }
-
-      .player-list {
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        padding: 10px;
-        background: #fff;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
       }
 
       #mazeCanvas {
@@ -154,6 +196,18 @@
         text-align: left;
         background-color: #f4f4f4;
       }
+
+      /* Keyframe animation for modals */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
     </style>
     <link rel="stylesheet" href="/asset/css/style.css" />
   </head>
@@ -171,7 +225,9 @@
     <div id="avatarModal" class="modal" style="display: none">
       <div class="modal-content">
         <h2>Select Your Avatar</h2>
-        <div id="avatarContainer"></div>
+        <div id="avatarContainer">
+          <!-- Avatar images will be dynamically added here -->
+        </div>
       </div>
     </div>
 
@@ -179,34 +235,37 @@
     <div id="waitingRoomModal" class="modal" style="display: none">
       <div class="modal-content">
         <h2>Waiting for Players</h2>
-        <p>Room ID: <span id="roomIdWaiting">12345</span></p> <!-- Display Room ID -->
+        <p>Room ID: <span id="roomIdWaiting">12345</span></p>
         <div id="playerListContainer" class="player-list">
-          <table id="playerList"></table>
+          <table id="playerList">
+            <!-- Player list will be dynamically added here -->
+          </table>
         </div>
-        
-        <p><span id="countdown"></p>
+        <p><span id="countdown">Waiting...</span></p>
       </div>
     </div>
+
     <!-- Game Stats and Maze Canvas -->
     <div id="gameContainer" style="display: none">
       <div id="stats">
-        <p>Room ID: <span id="roomIdMaze">12345</span></p> <!-- Display Room ID -->
+        <p>Room ID: <span id="roomIdMaze">12345</span></p>
+        <!-- Display Room ID -->
         <span id="timer">Time Left: 60s</span> |
-        <span id="score">Score: 0</span>
+        <span id="score">Coins Collected: 0</span>
+        <br /><br />
+        <button id="mainMenuButton">Go to Main Menu</button>
       </div>
-      
 
       <div style="display: flex">
         <!-- Maze Canvas -->
         <canvas id="mazeCanvas" width="600" height="600"></canvas>
 
-       <!-- Progress Container -->
-      <div id="progressContainer" style="margin-left: 20px; flex-grow: 1">
-        <h3>Player Progress</h3>
-        <!-- Progress table will be dynamically populated -->
-      </div>
-
-
+        <!-- Progress Container -->
+        <div id="progressContainer" style="margin-left: 20px; flex-grow: 1">
+          <h3>Player Progress</h3>
+          <!-- Progress table will be dynamically populated -->
+          <button id="showLeaderboardButton">Show Leaderboard</button>
+        </div>
       </div>
     </div>
 
@@ -224,19 +283,24 @@
           </thead>
           <tbody></tbody>
         </table>
+        <br />
         <button onclick="closeLeaderboard()">Close</button>
       </div>
     </div>
 
     <script type="module" src="js/main-game.js"></script>
+
     <script>
       function closeLeaderboard() {
-          const leaderboardModal = document.getElementById("leaderboardModal");
-          leaderboardModal.style.display = "none";
-          window.location.href = "index.html"; // Redirect to the main page
-        }
-        window.closeLeaderboard = closeLeaderboard;
+        document.getElementById("leaderboardModal").style.display = "none";
+      }
 
+      // Redirect to index.html when the Main Menu button is clicked
+      document
+        .getElementById("mainMenuButton")
+        .addEventListener("click", () => {
+          window.location.href = "index.html"; // Redirect to the index.html file
+        });
     </script>
   </body>
 </html>

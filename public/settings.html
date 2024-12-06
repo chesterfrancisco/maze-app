@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Settings</title>
+    <link rel="stylesheet" href="/asset/css/style.css" />
+    <script src="/background-music.js" defer></script>
+  </head>
+  <body>
+    <div class="container settings-container">
+      <h2 class="title">Game Settings</h2>
+
+      <!-- Toggle Background Music -->
+      <div class="settings-item">
+        <label for="music-toggle">Background Music:</label>
+        <input type="checkbox" id="music-toggle" />
+      </div>
+      <br />
+
+      <!-- Volume Control -->
+      <div class="settings-item">
+        <label for="music-volume">Music Volume:</label>
+        <input type="range" id="music-volume" min="0" max="1" step="0.01" />
+      </div>
+      <br />
+
+      <!-- Save and Return Buttons -->
+      <div class="button-group">
+        <button class="menu-button" onclick="saveSettings()">
+          Save Settings
+        </button>
+        <br />
+        <button class="menu-button" onclick="window.location.href='index.html'">
+          Return to Main
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Ensure this script runs after the page content is fully loaded
+      window.addEventListener("DOMContentLoaded", () => {
+        const musicToggle = document.getElementById("music-toggle");
+        const musicVolume = document.getElementById("music-volume");
+
+        // Load saved settings
+        musicToggle.checked = localStorage.getItem("musicEnabled") === "true";
+        musicVolume.value = localStorage.getItem("musicVolume") || 0.5;
+
+        // Save settings
+        window.saveSettings = function () {
+          const isMusicEnabled = musicToggle.checked;
+          const volume = musicVolume.value;
+
+          toggleMusic(isMusicEnabled);
+          setMusicVolume(volume);
+
+          alert("Settings saved!");
+        };
+      });
+    </script>
+  </body>
+</html>

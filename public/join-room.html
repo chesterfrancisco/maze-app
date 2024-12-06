@@ -5,6 +5,70 @@
     <title>Join Room</title>
     <link rel="stylesheet" href="/asset/css/style.css" />
     <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+
+        background-size: cover;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .container {
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        width: 350px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+        color: white;
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+      }
+
+      input[type="text"] {
+        width: 90%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 2px solid #ff7b54;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+        box-sizing: border-box;
+      }
+
+      input[type="text"]:focus {
+        border-color: #ebba34;
+      }
+
+      .create-button {
+        background-color: #ebba34;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 15px;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        width: 80%; /* Fixed width for all buttons */
+        height: 45px; /* Fixed height for uniformity */
+        margin: 10px 0;
+        box-sizing: border-box; /* Ensure padding doesn't affect button size */
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-align: center;
+        display: inline-block;
+      }
+
+      .create-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3);
+      }
+
       .modal {
         display: none;
         position: fixed;
@@ -30,6 +94,12 @@
 
       .modal-content h2 {
         margin-bottom: 15px;
+        font-size: 1.5rem;
+      }
+
+      .modal-content p {
+        font-size: 1rem;
+        margin-bottom: 20px;
       }
 
       .modal-content button {
@@ -37,7 +107,8 @@
         background: #007bff;
         color: white;
         border: none;
-        border-radius: 4px;
+        border-radius: 8px;
+        font-size: 1rem;
         cursor: pointer;
       }
 
@@ -49,9 +120,12 @@
   </head>
   <body>
     <div class="container">
-      <h2>Join a Room</h2>
+      <h1>Welcome to Maze Escape</h1>
       <input type="text" id="roomIdInput" placeholder="Enter Room ID" />
-      <button id="join-room">Join Room</button>
+      <button id="join-room" class="create-button">Join a room</button>
+      <button id="mainMenuButton" class="create-button">
+        Back to Main Menu
+      </button>
     </div>
 
     <!-- Modal for No Room Found -->
@@ -83,5 +157,13 @@
         <button onclick="closeModal('noInputModal')">Close</button>
       </div>
     </div>
+    <script>
+      // Redirect to index.html when the Main Menu button is clicked
+      document
+        .getElementById("mainMenuButton")
+        .addEventListener("click", () => {
+          window.location.href = "index.html"; // Redirect to the index.html file
+        });
+    </script>
   </body>
 </html>

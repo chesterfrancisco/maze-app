@@ -102,6 +102,64 @@ wss.on("connection", (ws) => {
   });
 });
 
+function handlePlayerFinished({ roomId, playerId }) {
+  const room = rooms[roomId];
+  if (!room) {
+    console.error(`Room ${roomId} not found when handling player finish.`);
+    return;
+  }
+
+  // Check if the finishedPlayers array exists
+  if (!room.finishedPlayers) {
+    room.finishedPlayers = [];
+  }
+
+  if (!room.finishedPlayers.includes(playerId)) {
+    room.finishedPlayers.push(playerId);
+
+    const finishOrder = room.finishedPlayers.length;
+    const bonusPoints = 50 - (finishOrder - 1) * 10;
+    room.scores[playerId] = (room.scores[playerId] || 0) + bonusPoints;
+
+    console.log(
+      `Player ${playerId} finished in room ${roomId} with bonus ${bonusPoints}.`
+    );
+
+    // Broadcast the updated leaderboard
+    broadcastLeaderboard(roomId, false);
+  }
+
+  // Check if all players are done
+  if (room.finishedPlayers.length === room.players.length) {
+    broadcastLeaderboard(roomId, true);
+  }
+}
+
+function broadcastLeaderboard(roomId, isFinal) {
+  const room = rooms[roomId];
+  if (!room) return;
+
+  const leaderboard = room.finishedPlayers
+    .map((playerId) => {
+      const player = room.players.find((p) => p.playerId === playerId);
+      return {
+        playerId,
+        name: player.name,
+        score: room.scores[playerId] || 0, // Ensure scores include bonuses
+        position: room.finishedPlayers.indexOf(playerId) + 1,
+      };
+    })
+    .sort((a, b) => b.score - a.score); // Sort by score descending
+
+  broadcastToRoom(roomId, {
+    type: "leaderboard",
+    leaderboard,
+    isFinal,
+  });
+
+  console.log(`Leaderboard broadcasted for room ${roomId}:`, leaderboard);
+}
+
 function handleAvatarSelected(message) {
   const { roomId, playerId, avatar } = message;
 
@@ -191,6 +249,7 @@ function handleCreateRoom(roomId) {
       selectedAvatars: new Set(), // Track selected avatars
       coins: [], // Add an empty array for coins
       scores: {}, // Initialize scores object for the room
+      finishedPlayers: [], // Initialize finishedPlayers
     };
     console.log(`Room created: ${roomId}`);
   } else {
@@ -253,18 +312,28 @@ function handleStartGame(roomId) {
     return;
   }
 
+  // Prevent re-starting the game
+  if (room.isGameStarted) {
+    console.log(`Game in room ${roomId} is already started.`);
+    return;
+  }
+
+  room.isGameStarted = true;
+
+  // Generate the maze and exit only once
   const { maze, coins, exit } = generateMaze(15, 15, Math.random());
-  room.maze = maze;
-  room.coins = coins;
-  room.exit = exit;
-  room.finishedPlayers = []; // Track players who finish the maze
+  room.maze = maze; // Store the maze for this room
+  room.coins = coins; // Store the coins
+  room.exit = exit; // Store the exit
+
+  console.log(`Exit placed at (${exit.x}, ${exit.y}).`);
 
   const initialPositions = room.players.map((player) => {
     let x, y;
     do {
       x = Math.floor(Math.random() * 15);
       y = Math.floor(Math.random() * 15);
-    } while (maze[y][x] !== 0);
+    } while (maze[y][x] !== 0); // Find a valid starting position
     return { playerId: player.playerId, x, y };
   });
 
@@ -279,85 +348,61 @@ function handleStartGame(roomId) {
         JSON.stringify({
           type: "start-game",
           positions: initialPositions,
-          maze,
-          coins,
-          exit,
+          maze, // Send the same maze
+          coins, // Send the same coins
+          exit, // Send the correct exit
         })
       );
     }
   });
+
+  console.log(
+    `Game started in room ${roomId} with exit at (${exit.x}, ${exit.y}).`
+  );
 }
 
-function handlePlayerFinished({ roomId, playerId }) {
+function handlePlayerMove({ roomId, playerId, position }) {
   const room = rooms[roomId];
   if (!room) return;
 
-  if (!room.finishedPlayers.includes(playerId)) {
-    room.finishedPlayers.push(playerId);
+  const { x, y } = position;
+  const { exit } = room;
 
-    // Assign bonus points for being early
-    const finishOrder = room.finishedPlayers.length;
-    const bonusPoints = 50 - (finishOrder - 1) * 10; // Reduce bonus by 10 per position
-    room.scores[playerId] = (room.scores[playerId] || 0) + bonusPoints;
+  console.log(`Player ${playerId} moved to (${x}, ${y}) in room ${roomId}.`);
 
-    console.log(`Player ${playerId} finished with bonus ${bonusPoints}.`);
+  // Check if the player has reached the exit
+  if (x === exit.x && y === exit.y) {
+    if (!room.finishedPlayers.includes(playerId)) {
+      room.finishedPlayers.push(playerId);
 
-    // Broadcast the leaderboard immediately
-    broadcastLeaderboard(roomId, false);
+      // Assign bonus points
+      const finishOrder = room.finishedPlayers.length;
+      const bonusPoints = 50 - (finishOrder - 1) * 10; // Decrease 10 points per rank
+      room.scores[playerId] = (room.scores[playerId] || 0) + bonusPoints;
+
+      console.log(
+        `Player ${playerId} reached the exit at (${exit.x}, ${exit.y}) and received ${bonusPoints} points.`
+      );
+
+      // Broadcast updated leaderboard
+      broadcastLeaderboard(roomId, false);
+    }
+
+    // Check if all players have finished
+    if (room.finishedPlayers.length === room.players.length) {
+      broadcastLeaderboard(roomId, true); // Send final leaderboard
+    }
   }
 
-  // Check if all players are done
-  if (room.finishedPlayers.length === room.players.length) {
-    broadcastLeaderboard(roomId, true); // Final leaderboard
-  }
-}
-
-function broadcastLeaderboard(roomId, isFinal) {
-  const room = rooms[roomId];
-  if (!room) return;
-
-  const leaderboard = room.finishedPlayers
-    .map((playerId) => {
-      const player = room.players.find((p) => p.playerId === playerId);
-      return {
-        playerId,
-        name: player.name,
-        score: room.scores[playerId] || 0,
-        position: room.finishedPlayers.indexOf(playerId) + 1,
-      };
-    })
-    .sort((a, b) => b.score - a.score); // Sort by score descending
-
+  // Broadcast player movement to the room
   broadcastToRoom(roomId, {
-    type: "leaderboard",
-    leaderboard,
-    isFinal,
+    type: "player-move",
+    playerId,
+    position,
   });
-
-  console.log(`Leaderboard broadcasted: ${JSON.stringify(leaderboard)}`);
 }
 
 // Broadcast the final leaderboard to all players
-function broadcastFinalLeaderboard(roomId) {
-  const room = rooms[roomId];
-  if (!room) return;
-
-  const leaderboard = room.players
-    .map((player) => ({
-      playerId: player.playerId,
-      name: player.name,
-      score: room.scores[player.playerId] || 0,
-    }))
-    .sort((a, b) => b.score - a.score); // Sort by score descending
-
-  broadcastToRoom(roomId, {
-    type: "leaderboard",
-    leaderboard,
-    isFinal: true, // Indicate it's the final leaderboard
-  });
-
-  console.log("Final leaderboard broadcasted:", leaderboard);
-}
 
 // Handle joining a room
 function handleJoinRoom(ws, { roomId, name, avatar, playerId }) {
@@ -472,29 +517,63 @@ function handleDisconnect(ws) {
     const room = rooms[roomId];
     if (!room) return;
 
-    // Remove the disconnected player
-    room.players = room.players.filter((player) => player.ws !== ws);
+    // Find the disconnected player
+    const disconnectedPlayer = room.players.find((player) => player.ws === ws);
 
-    // Delete room if no players remain
-    if (room.players.length === 0) {
-      setTimeout(() => {
-        if (rooms[roomId] && rooms[roomId].players.length === 0) {
-          delete rooms[roomId]; // Delete only if still empty after delay
-          console.log(`Room ${roomId} deleted because it is empty.`);
-        }
-      }, 5000); // Wait 5 seconds before deleting
-    } else {
-      // Notify remaining players
-      broadcastToRoom(roomId, {
-        type: "room-update",
-        players: room.players.map((player) => ({
-          playerId: player.playerId,
-          name: player.name,
-          avatar: player.avatar,
-        })),
-      });
+    if (disconnectedPlayer) {
+      console.log(
+        `Player ${disconnectedPlayer.name} disconnected from room ${roomId}`
+      );
+
+      // Remove the player from the room
+      room.players = room.players.filter((player) => player.ws !== ws);
+
+      // Check if the room is empty
+      if (room.players.length === 0) {
+        setTimeout(() => {
+          if (rooms[roomId] && rooms[roomId].players.length === 0) {
+            delete rooms[roomId];
+            console.log(`Room ${roomId} deleted because it is empty.`);
+          }
+        }, 5000); // Wait 5 seconds before deleting the room
+      } else {
+        // Update the leaderboard and notify remaining players
+        updateLeaderboard(roomId);
+
+        // Notify remaining players of the updated room state
+        broadcastToRoom(roomId, {
+          type: "room-update",
+          players: room.players.map((player) => ({
+            playerId: player.playerId,
+            name: player.name,
+            avatar: player.avatar,
+          })),
+        });
+      }
     }
   });
+}
+
+function updateLeaderboard(roomId) {
+  const room = rooms[roomId];
+  if (!room) return;
+
+  // Sort players by score in descending order
+  const leaderboard = room.players
+    .map((player) => ({
+      playerId: player.playerId,
+      name: player.name,
+      score: player.score, // Ensure scores are up-to-date
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  // Broadcast the updated leaderboard
+  broadcastToRoom(roomId, {
+    type: "leaderboard-update",
+    leaderboard,
+  });
+
+  console.log(`Leaderboard updated for room ${roomId}:`, leaderboard);
 }
 
 server.listen(port, () => {

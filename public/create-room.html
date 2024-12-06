@@ -5,13 +5,95 @@
     <title>Create Room</title>
     <link rel="stylesheet" href="/asset/css/style.css" />
     <script type="module" src="js/create-room.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+
+        background-size: cover;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .container {
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        width: 350px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+        color: white;
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+      }
+
+      .create-button {
+        background-color: #ebba34;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 15px;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        width: 80%;
+        height: 45px;
+        margin: 15px 0;
+        box-sizing: border-box;
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-align: center;
+        display: inline-block;
+      }
+
+      .create-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      p#room-info {
+        color: #ffe400;
+        font-size: 1rem;
+        margin-top: 20px;
+      }
+
+      a#start-game {
+        display: block;
+        font-size: 1.5rem;
+        color: red;
+        margin-top: 20px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: color 0.2s ease-in-out;
+      }
+
+      a#start-game:hover {
+        color: #ff4500;
+      }
+    </style>
   </head>
   <body>
     <div class="container">
-      <h2>Create a Room</h2>
-      <button id="create-room">Create Room</button>
+      <h1>Welcome to Maze Escape</h1>
+      <button id="create-room" class="create-button">Create a room</button>
+      <button id="mainMenuButton" class="create-button">
+        Back to Main Menu
+      </button>
       <p id="room-info"></p>
       <a id="start-game" href="#" style="display: none">Start Game</a>
     </div>
+    <script>
+      // Redirect to index.html when the Main Menu button is clicked
+      document
+        .getElementById("mainMenuButton")
+        .addEventListener("click", () => {
+          window.location.href = "index.html"; // Redirect to the index.html file
+        });
+    </script>
   </body>
 </html>

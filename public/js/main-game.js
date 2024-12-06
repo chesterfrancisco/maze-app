@@ -304,7 +304,7 @@ socket.onmessage = async (event) => {
       updateWaitingRoom(data.players);
       break;
     case "start-game":
-      startGame(data.positions);
+      startGame(data);
       break;
     case "avatar-update":
       updateAvatarModal(data.players, data.selectedAvatars);
@@ -316,10 +316,14 @@ socket.onmessage = async (event) => {
       showLeaderboardModal(); // Trigger leaderboard modal
       break;
     case "leaderboard":
+      console.log("Received leaderboard data:", data.leaderboard);
       displayLeaderboard(data.leaderboard, data.isFinal);
       break;
     case "signal":
       await handleSignaling(data);
+      break;
+    case "final-scores":
+      displayLeaderboard(data.scores, true); // Display final scores
       break;
     case "player-disconnected":
       handlePlayerDisconnection(data.playerId);
@@ -482,29 +486,30 @@ function selectAvatar(avatarId) {
 }
 
 function handlePlayerMove(x, y) {
+  console.log(`handlePlayerMove called with position (${x}, ${y})`);
+
   const player = players[localPlayerId];
   if (!player || gameEnded) return;
 
   player.x = x;
   player.y = y;
 
-  // Check if player reached the exit (green door)
+  // Check if the player has reached the exit
   if (x === exitPosition.x && y === exitPosition.y) {
+    console.log(`Player ${localPlayerId} reached the exit at (${x}, ${y})!`);
+
+    // Notify the server
     socket.send(
       JSON.stringify({
         type: "player-finished",
         roomId,
         playerId: localPlayerId,
+        score: players[localPlayerId].score || 0, // Send current score
       })
     );
 
-    console.log(`Player ${localPlayerId} reached the exit!`);
-
-    // Trigger the leaderboard immediately on the client
-    showLeaderboardModal();
+    gameEnded = true; // Prevent further movement
   }
-
-  drawMaze(canvas.width / mazeGrid[0].length);
 }
 
 // Send Final Score to Server
@@ -626,7 +631,7 @@ function updateWaitingRoom(playersData) {
 // Countdown before starting the game
 function startCountdown() {
   countdownStarted = true;
-  let countdown = 10; // Adjustable countdown time
+  let countdown = 30; // Adjustable countdown time
 
   const interval = setInterval(() => {
     countdown--;
@@ -654,19 +659,21 @@ socket.on("start-game", (data) => {
 });
 
 // Start the game
-function startGame(positions) {
+function startGame(data) {
   waitingRoomModal.style.display = "none";
   gameContainer.style.display = "block";
 
-  if (!mazeGrid) {
-    const mazeData = generateMaze(15, 15, roomId.hashCode());
-    mazeGrid = mazeData.maze;
-    exitPosition = mazeData.exit;
-    coins = mazeData.coins;
-  }
+  // Assign the maze data received from the server
+  mazeGrid = data.maze; // Use the maze sent from the server
+  exitPosition = data.exit; // Use the exit coordinates sent from the server
+  coins = data.coins; // Use the coins sent from the server
+
+  console.log(
+    `Maze initialized with exit at (${exitPosition.x}, ${exitPosition.y}).`
+  );
 
   // Set player positions
-  positions.forEach(({ playerId, x, y }) => {
+  data.positions.forEach(({ playerId, x, y }) => {
     if (!players[playerId]) {
       // Initialize new player
       players[playerId] = { x, y, playerId };
@@ -755,12 +762,25 @@ function getTimeRemaining() {
   );
 }
 
+function updateScores() {
+  const leaderboard = Object.values(players)
+    .map((player) => ({
+      name: player.name,
+      score: player.score,
+    }))
+    .sort((a, b) => b.score - a.score); // Sort by descending score
+
+  // Update the leaderboard in progressContainer
+  displayLeaderboard(leaderboard, false);
+}
+
 // Notify server when collecting a coin
 function collectCoin(playerId, x, y) {
   const coinIndex = coins.findIndex((coin) => coin.x === x && coin.y === y);
 
   if (coinIndex !== -1) {
     coins.splice(coinIndex, 1); // Update local coins for immediate feedback
+    if (!players[playerId].score) players[playerId].score = 0;
     players[playerId].score += 10; // Increment score locally
     //if (playerId === localPlayerId) {
     updateScoreUI();
@@ -775,6 +795,7 @@ function collectCoin(playerId, x, y) {
         roomId,
         playerId,
         coinPosition: { x, y },
+        score: players[playerId].score, // Send updated score
       })
     );
     //}
@@ -804,14 +825,86 @@ function handleGameState(data) {
 
 // Display Leaderboard
 function displayLeaderboard(leaderboard, isFinal) {
+  console.log("Displaying leaderboard:", leaderboard);
+
+  // Progress container setup
+  const progressContainer = document.getElementById("progressContainer");
+  progressContainer.innerHTML = ""; // Clear content
+
+  // Modal elements
   const leaderboardModal = document.getElementById("leaderboardModal");
-  const leaderboardTitle = document.getElementById("leaderboardTitle");
   const leaderboardTableBody = document.querySelector("#leaderboard tbody");
+  const leaderboardTitle = document.getElementById("leaderboardTitle");
+  leaderboardTableBody.innerHTML = ""; // Clear modal rows
 
-  // Clear existing leaderboard rows
-  leaderboardTableBody.innerHTML = "";
+  // Title text
+  const titleText = isFinal ? "Final Standings" : "Current Standings";
+  leaderboardTitle.textContent = titleText;
 
-  // Populate leaderboard rows
+  // Create leaderboard table for progress container
+  const table = document.createElement("table");
+  table.style.width = "100%";
+  table.style.borderCollapse = "collapse";
+
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr>
+      <th>Rank</th>
+      <th>Player</th>
+      <th>Score</th>
+    </tr>
+  `;
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  leaderboard.forEach((player, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${player.name}</td>
+      <td>${player.score || 0}</td>
+    `;
+    tbody.appendChild(row);
+
+    // Add rows to modal as well
+    const modalRow = row.cloneNode(true);
+    leaderboardTableBody.appendChild(modalRow);
+  });
+  table.appendChild(tbody);
+  progressContainer.appendChild(table);
+
+  // Add title to progress container
+  const title = document.createElement("h2");
+  title.textContent = titleText;
+  progressContainer.prepend(title);
+
+  // Display modal if it's final standings
+  if (isFinal) {
+    leaderboardModal.style.display = "block";
+  }
+
+  console.log("Leaderboard updated successfully.");
+}
+
+// Helper function to create the leaderboard table
+function createLeaderboardTable(leaderboard) {
+  const table = document.createElement("table");
+  table.style.width = "100%";
+  table.style.borderCollapse = "collapse";
+
+  // Add table headers
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr>
+      <th>Rank</th>
+      <th>Player</th>
+      <th>Score</th>
+    </tr>
+  `;
+  table.appendChild(thead);
+
+  // Add rows for each player
+  const tbody = document.createElement("tbody");
   leaderboard.forEach((player, index) => {
     const row = document.createElement("tr");
     row.innerHTML = `
@@ -819,20 +912,15 @@ function displayLeaderboard(leaderboard, isFinal) {
       <td>${player.name}</td>
       <td>${player.score}</td>
     `;
-    leaderboardTableBody.appendChild(row);
+    tbody.appendChild(row);
   });
+  table.appendChild(tbody);
 
-  leaderboardTitle.textContent = isFinal
-    ? "Final Leaderboard"
-    : "Current Standings";
-
-  leaderboardModal.style.display = "block";
-  console.log("Displaying leaderboard:", leaderboard);
+  return table;
 }
 
 window.closeLeaderboard = function () {
-  const leaderboardModal = document.getElementById("leaderboardModal");
-  leaderboardModal.style.display = "none";
+  document.getElementById("leaderboardModal").style.display = "none";
 };
 
 // Handle incoming data in setupDataChannelHandlers
@@ -1115,7 +1203,7 @@ function setupPlayerControls() {
   const pressedKeys = new Set();
 
   document.addEventListener("keydown", (event) => {
-    if (pressedKeys.has(event.key)) return; // Ignore if already processed
+    if (pressedKeys.has(event.key)) return; // Ignore repeated keys
     pressedKeys.add(event.key);
 
     const player = players[localPlayerId];
@@ -1123,24 +1211,25 @@ function setupPlayerControls() {
 
     let { x, y } = player;
 
+    // Move based on keypress
     if (event.key === "ArrowUp" && mazeGrid[y - 1]?.[x] === 0) y--;
     if (event.key === "ArrowDown" && mazeGrid[y + 1]?.[x] === 0) y++;
     if (event.key === "ArrowLeft" && mazeGrid[y]?.[x - 1] === 0) x--;
     if (event.key === "ArrowRight" && mazeGrid[y]?.[x + 1] === 0) x++;
 
+    // Update player position
     player.x = x;
     player.y = y;
 
-    // Collect coin if present
+    // Log the player's new position
+    console.log(`Player moved to (${x}, ${y})`);
+
+    // Handle collecting coins or reaching the exit
     collectCoin(localPlayerId, x, y);
+    handlePlayerMove(x, y);
 
-    // Broadcast movement to peers
+    // Update the maze and broadcast movement
     broadcastMovement({ x, y });
-
-    // Refresh the player list locally
-    updatePlayerList();
-
-    // Update the local canvas
     drawMaze(canvas.width / mazeGrid[0].length);
   });
 
@@ -1341,7 +1430,7 @@ function startGameTimer() {
       clearInterval(gameTimer);
       timerElement.textContent = `Time Left: 0s`;
 
-      // Ensure `endGame()` is called
+      // Call endGame() when time runs out
       endGame();
       return;
     }
@@ -1349,19 +1438,43 @@ function startGameTimer() {
   }, 1000);
 }
 
+function calculateFinalScores(players, bonusPoints) {
+  return players
+    .map((player) => ({
+      name: player.name,
+      score: player.hasReachedExit
+        ? player.coinsCollected + bonusPoints
+        : player.coinsCollected,
+    }))
+    .sort((a, b) => b.score - a.score); // Sort by score descending
+}
+
+function updateScoreSpan(player) {
+  const scoreSpan = document.getElementById("score");
+  const currentScore = player.hasReachedExit
+    ? player.coinsCollected + 50
+    : player.coinsCollected;
+  scoreSpan.textContent = `Score: ${currentScore}`;
+}
+
 // End the game
 function endGame() {
-  gameEnded = true;
-  console.log("Game over!");
+  const finalScores = Object.values(players).map((player) => ({
+    name: player.name,
+    score: player.score || 0, // Ensure score is 0 if undefined
+  }));
 
-  // Stop the timer and show leaderboard modal
-  clearInterval(gameTimer);
-
-  // Notify the server about the final score
-  sendFinalScore();
+  // Broadcast final scores to all players
+  socket.send(
+    JSON.stringify({
+      type: "final-scores",
+      roomId,
+      scores: finalScores,
+    })
+  );
 
   // Display the final leaderboard
-  showLeaderboardModal();
+  displayLeaderboard(finalScores, true);
 }
 
 // Wait for all scores to be received
